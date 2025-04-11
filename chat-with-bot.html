@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with Your Bot</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input, button { margin-bottom: 10px; width: 100%; max-width: 400px; }
+    #chatOutput { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Chat with Your Bot</h1>
+  <label for="apiEndpoint">Chatbot API Endpoint:</label>
+  <input type="text" id="apiEndpoint" value="https://my-chatbot-factory.onrender.com/api/v1/chatbots/chat/chbt_eb7375da6805475faedc0683b67a60d3" required>
+  
+  <label for="message">Message:</label>
+  <input type="text" id="message" placeholder="Type your message" required>
+  
+  <button onclick="sendMessage()">Send</button>
+  
+  <h2>Response</h2>
+  <div id="chatOutput"></div>
+
+  <script>
+    const chatOutput = document.getElementById('chatOutput');
+
+    async function sendMessage() {
+      const apiEndpoint = document.getElementById('apiEndpoint').value;
+      const message = document.getElementById('message').value;
+      chatOutput.textContent = 'Sending...';
+
+      try {
+        const response = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Chat failed');
+        chatOutput.textContent = data.data.response;
+      } catch (error) {
+        chatOutput.textContent = `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

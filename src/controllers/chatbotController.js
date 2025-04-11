@@ -1,10 +1,11 @@
-const Chatbot = require('../models/chatbot');
+const Chatbot = require('../models/chatbot'); // Corrected from '../models/chatbotModel'
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const embeddingService = require('../services/embeddingService');
 const pdfParse = require('pdf-parse');
 const keyGenerator = require('../utils/keyGenerator');
 const logger = require('../utils/logger');
+const openrouterService = require('../services/openrouterService');
 
 exports.createChatbot = catchAsync(async (req, res, next) => {
   const { name, prompt } = req.body;
@@ -26,7 +27,25 @@ exports.createChatbot = catchAsync(async (req, res, next) => {
     status: 'initializing'
   });
 
-  res.status(201).json({ status: 'success', data: { chatbot } });
+  const fullPrompt = `${prompt}`;
+  const response = await openrouterService.generateCompletion(fullPrompt, {
+    temperature: 0.7,
+    maxTokens: 2048
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      chatbot: {
+        _id: chatbot._id,
+        name: chatbot.name,
+        prompt: chatbot.prompt,
+        apiKey: chatbot.apiKey,
+        apiEndpoint: chatbot.apiEndpoint
+      },
+      response: response.text
+    }
+  });
 });
 
 exports.uploadDocument = catchAsync(async (req, res, next) => {
@@ -81,7 +100,7 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
 
   const context = await embeddingService.searchVectorStore(message, chatbot.vectorStoreId);
   const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context}\n\nUser: ${message}`;
-  const response = await require('../services/openrouterService').generateCompletion(fullPrompt, chatbot.settings);
+  const response = await openrouterService.generateCompletion(fullPrompt, chatbot.settings);
 
   res.status(200).json({ status: 'success', data: { response: response.text } });
 });

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input, textarea, button { margin-bottom: 10px; width: 100%; max-width: 400px; }
+    #result { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Create Your Chatbot</h1>
+  <form id="chatbotForm">
+    <label for="name">Your Name:</label>
+    <input type="text" id="name" name="name" required>
+    
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    
+    <label for="botName">Chatbot Name:</label>
+    <input type="text" id="botName" name="botName" required>
+    
+    <label for="prompt">Prompt:</label>
+    <textarea id="prompt" name="prompt" rows="4" required></textarea>
+    
+    <label for="file">Upload Context File (TXT):</label>
+    <input type="file" id="file" name="file" accept=".txt" required>
+    
+    <button type="submit">Create Chatbot</button>
+  </form>
+  <h2>Result</h2>
+  <div id="result"></div>
+
+  <script>
+    const BASE_URL = 'https://my-chatbot-factory.onrender.com/api/v1';
+    const form = document.getElementById('chatbotForm');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultDiv.textContent = 'Processing...';
+
+      try {
+        // Step 1: Signup
+        const email = `${document.getElementById('email').value.split('@')[0]}${Date.now()}@example.com`; // Unique email
+        const signupResponse = await fetch(`${BASE_URL}/users/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('name').value,
+            email,
+            password: document.getElementById('password').value
+          })
+        });
+        const signupData = await signupResponse.json();
+        if (signupData.status !== 'success') throw new Error('Signup failed');
+        const token = signupData.token;
+
+        // Step 2: Create Chatbot
+        const createResponse = await fetch(`${BASE_URL}/chatbots`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: document.getElementById('botName').value,
+            prompt: document.getElementById('prompt').value
+          })
+        });
+        const createData = await createResponse.json();
+        if (createData.status !== 'success') throw new Error('Chatbot creation failed');
+        const chatbotId = createData.data.chatbot._id;
+        const apiEndpoint = `${BASE_URL}${createData.data.chatbot.apiEndpoint}`;
+
+        // Step 3: Upload File
+        const formData = new FormData();
+        formData.append('file', document.getElementById('file').files[0]);
+        const uploadResponse = await fetch(`${BASE_URL}/chatbots/${chatbotId}/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        const uploadData = await uploadResponse.json();
+        if (uploadData.status !== 'success') throw new Error('Upload failed');
+
+        // Display Result
+        resultDiv.textContent = `Chatbot created successfully!\nYour API Endpoint: ${apiEndpoint}\nUse this URL to chat with your bot.`;
+      } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
