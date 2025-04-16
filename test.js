@@ -2,14 +2,14 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 
-const BASE_URL = 'https://my-chatbot-factory.onrender.com/api/v1'; // Deployed version
+const BASE_URL = 'http://localhost:3000';
 let token, chatbotId, apiKey;
 
-axios.defaults.timeout = 60000; // 60 seconds global timeout
+axios.defaults.timeout = 60000;
 
 async function testSignup() {
   const uniqueEmail = `test${Date.now()}@example.com`;
-  const response = await axios.post(`${BASE_URL}/users/signup`, {
+  const response = await axios.post(`${BASE_URL}/api/v1/users/signup`, {
     name: 'Test',
     email: uniqueEmail,
     password: 'password123'
@@ -19,7 +19,7 @@ async function testSignup() {
 }
 
 async function testCreateChatbot() {
-  const response = await axios.post(`${BASE_URL}/chatbots`, {
+  const response = await axios.post(`${BASE_URL}/api/v1/chatbots`, {
     name: 'MyBot',
     prompt: 'You are a helpful assistant skilled in math and science. Explain the Pythagorean theorem briefly and then tell me what 3 squared plus 4 squared equals.'
   }, { headers: { Authorization: `Bearer ${token}` } });
@@ -32,25 +32,57 @@ async function testUploadDocument() {
   const form = new FormData();
   form.append('file', fs.createReadStream('E:/chatbot-factory/small-test.txt'));
   
-  const response = await axios.post(`${BASE_URL}/chatbots/${chatbotId}/upload`, form, {
+  const response = await axios.post(`${BASE_URL}/api/v1/chatbots/${chatbotId}/upload`, form, {
     headers: { ...form.getHeaders(), Authorization: `Bearer ${token}` },
-    timeout: 180000 // 3 minutes for upload
+    timeout: 180000
   });
   console.log('Upload Document:', JSON.stringify(response.data, null, 2));
 }
 
 async function testChat() {
-  // Test 1: Specific query
-  const response1 = await axios.post(`${BASE_URL}/chatbots/chat/${apiKey}`, {
-    message: 'Can you use the theorem to explain what’s in the document?'
+  const message = 'Can you use the theorem to explain what’s in the document?';
+  // Test 1: Chat endpoint with default mode (no mode)
+  const response1 = await axios.post(`${BASE_URL}/api/v1/chatbots/chat/${apiKey}`, {
+    message
   });
-  console.log('Chat (Specific):', JSON.stringify(response1.data, null, 2));
+  console.log('Chat (Default):', JSON.stringify(response1.data, null, 2));
+  const sampleEndpoint = response1.data.data.sampleEndpoint
+    ? `${BASE_URL}${response1.data.data.sampleEndpoint}`
+    : `${BASE_URL}/api/v1/chatbots/${apiKey}/sample`;
 
-  // Test 2: Vague query to trigger CRAG
-  const response2 = await axios.post(`${BASE_URL}/chatbots/chat/${apiKey}`, {
-    message: 'Triangle stuff'
+  // Test 2: Chat endpoint with precision mode
+  const response2 = await axios.post(`${BASE_URL}/api/v1/chatbots/chat/${apiKey}`, {
+    message,
+    mode: 'precision'
   });
-  console.log('Chat (Vague):', JSON.stringify(response2.data, null, 2));
+  console.log('Chat (Precision):', JSON.stringify(response2.data, null, 2));
+
+  // Test 3: Chat endpoint with exploration mode
+  const response3 = await axios.post(`${BASE_URL}/api/v1/chatbots/chat/${apiKey}`, {
+    message,
+    mode: 'exploration'
+  });
+  console.log('Chat (Exploration):', JSON.stringify(response3.data, null, 2));
+
+  // Test 4: Sample endpoint with default mode (no mode)
+  const response4 = await axios.post(sampleEndpoint, {
+    message
+  });
+  console.log('Sample (Default):', JSON.stringify(response4.data, null, 2));
+
+  // Test 5: Sample endpoint with precision mode
+  const response5 = await axios.post(sampleEndpoint, {
+    message,
+    mode: 'precision'
+  });
+  console.log('Sample (Precision):', JSON.stringify(response5.data, null, 2));
+
+  // Test 6: Sample endpoint with exploration mode
+  const response6 = await axios.post(sampleEndpoint, {
+    message,
+    mode: 'exploration'
+  });
+  console.log('Sample (Exploration):', JSON.stringify(response6.data, null, 2));
 }
 
 async function runTests() {

@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post('/', authController.protect, chatbotController.createChatbot);
 router.post('/:id/upload', authController.protect, upload.single('file'), chatbotController.uploadDocument);
-router.post('/chat/:apiKey', chatbotController.handleChatRequest); // No authController.protect
+router.post('/chat/:apiKey', chatbotController.handleChatRequest);
+router.post('/:apiKey/sample', chatbotController.sampleResponse);
 
 module.exports = router;

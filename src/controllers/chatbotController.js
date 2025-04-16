@@ -7,6 +7,7 @@ const keyGenerator = require('../utils/keyGenerator');
 const logger = require('../utils/logger');
 const openrouterService = require('../services/openrouterService');
 const cragService = require('../services/cragService');
+const qirsService = require('../services/qirsService');
 
 exports.createChatbot = catchAsync(async (req, res, next) => {
   const { name, prompt } = req.body;
@@ -90,7 +91,7 @@ exports.uploadDocument = catchAsync(async (req, res, next) => {
 
 exports.handleChatRequest = catchAsync(async (req, res, next) => {
   const { apiKey } = req.params;
-  const { message } = req.body;
+  const { message, mode } = req.body;
   if (!message) return next(new AppError('Message is required', 400));
 
   const chatbot = await Chatbot.findOne({ apiKey });
@@ -102,7 +103,31 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
   logger.info(`CRAG context for message "${message}": ${context || 'No context'}`);
   const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
-  const response = await openrouterService.generateCompletion(fullPrompt, chatbot.settings);
+  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      response: response.text,
+      sampleEndpoint: `/api/v1/chatbots/${apiKey}/sample`
+    }
+  });
+});
+
+exports.sampleResponse = catchAsync(async (req, res, next) => {
+  const { apiKey } = req.params;
+  const { message, mode } = req.body;
+  if (!message) return next(new AppError('Message is required', 400));
+
+  const chatbot = await Chatbot.findOne({ apiKey });
+  if (!chatbot) return next(new AppError('Invalid chatbot API key', 401));
+  if (chatbot.status !== 'ready') {
+    return next(new AppError('Chatbot is not ready', 503));
+  }
+
+  const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
+  const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
+  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message);
 
   res.status(200).json({ status: 'success', data: { response: response.text } });
 });

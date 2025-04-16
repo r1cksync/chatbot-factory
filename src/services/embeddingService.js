@@ -32,6 +32,19 @@ exports.createEmbeddings = async (text, vectorStoreId) => {
   }
 };
 
+exports.createEmbedding = async (text) => {
+  if (!embedder) throw new AppError('Embedding model not yet loaded', 503);
+  if (!text || typeof text !== 'string') throw new AppError('Invalid text input', 400);
+
+  const embedding = await embedder(text, { pooling: 'mean', normalize: true });
+  const embeddingArray = new Float32Array(embedding.data);
+  logger.info(`Single embedding length: ${embeddingArray.length}, Sample: ${embeddingArray.slice(0, 5)}`);
+  if (embeddingArray.length !== 384) {
+    throw new AppError(`Single embedding dimension mismatch: expected 384, got ${embeddingArray.length}`, 500);
+  }
+  return embeddingArray;
+};
+
 exports.searchVectorStore = async (query, vectorStoreId, limit = 5) => {
   const store = stores.get(vectorStoreId);
   if (!store) throw new AppError('Vector store not found', 404);
