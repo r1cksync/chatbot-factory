@@ -2,7 +2,7 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 
-const BASE_URL = 'http://localhost:3000/api/v1'; // Local testing
+const BASE_URL = 'https://my-chatbot-factory.onrender.com/api/v1'; // Deployed version
 let token, chatbotId, apiKey;
 
 axios.defaults.timeout = 60000; // 60 seconds global timeout
@@ -40,10 +40,17 @@ async function testUploadDocument() {
 }
 
 async function testChat() {
-  const response = await axios.post(`${BASE_URL}/chatbots/chat/${apiKey}`, {
+  // Test 1: Specific query
+  const response1 = await axios.post(`${BASE_URL}/chatbots/chat/${apiKey}`, {
     message: 'Can you use the theorem to explain what’s in the document?'
   });
-  console.log('Chat:', JSON.stringify(response.data, null, 2));
+  console.log('Chat (Specific):', JSON.stringify(response1.data, null, 2));
+
+  // Test 2: Vague query to trigger CRAG
+  const response2 = await axios.post(`${BASE_URL}/chatbots/chat/${apiKey}`, {
+    message: 'Triangle stuff'
+  });
+  console.log('Chat (Vague):', JSON.stringify(response2.data, null, 2));
 }
 
 async function runTests() {

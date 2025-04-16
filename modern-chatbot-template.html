@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Chatbot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e1e2f 0%, #2a2a4a 100%);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Parallax Background */
+    .parallax-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://source.unsplash.com/random/1920x1080?tech') no-repeat center center;
+      background-size: cover;
+      opacity: 0.2;
+      z-index: -1;
+      transform: translateZ(0);
+    }
+
+    /* Chat Container with 2.5D Effect */
+    .chat-container {
+      position: relative;
+      max-width: 600px;
+      margin: 50px auto;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      z-index: 1;
+      transform: translateZ(10px);
+    }
+
+    /* Chat History */
+    #chatHistory {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 80%;
+      word-wrap: break-word;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .user-message {
+      background: #007bff;
+      color: #fff;
+      margin-left: auto;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .bot-message {
+      background: #ffffff;
+      color: #333;
+      margin-right: auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+
+    #messageInput {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      outline: none;
+      transition: transform 0.2s;
+    }
+
+    #messageInput:focus {
+      transform: scale(1.02);
+    }
+
+    #sendButton {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    #sendButton:hover {
+      transform: translateY(-2px);
+      background: #0056b3;
+    }
+
+    /* Parallax Scroll Effect */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scrollbar Styling */
+    #chatHistory::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #chatHistory::-webkit-scrollbar-thumb {
+      background: #007bff;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="parallax-bg"></div>
+  <div class="chat-container">
+    <h2>Modern Chatbot</h2>
+    <div id="chatHistory"></div>
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Type your message..." required>
+      <button id="sendButton" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API_ENDPOINT = 'https://my-chatbot-factory.onrender.com/api/v1/chatbots/chat/chbt_14d4ddb821f940678ffde35c3a43f122';
+    const chatHistoryDiv = document.getElementById('chatHistory');
+    let chatHistory = []; // Store conversation history
+
+    function addMessage(content, isUser) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+      messageDiv.textContent = content;
+      chatHistoryDiv.appendChild(messageDiv);
+      chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight; // Auto-scroll to bottom
+    }
+
+    async function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      // Add user message to history and UI
+      chatHistory.push({ role: 'user', content: message });
+      addMessage(message, true);
+      messageInput.value = ''; // Clear input
+
+      try {
+        // Send current message and full chat history to API
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            history: chatHistory // Send entire history
+          })
+        });
+
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Chat failed');
+
+        // Add bot response to history and UI
+        const botResponse = data.data.response;
+        chatHistory.push({ role: 'assistant', content: botResponse });
+        addMessage(botResponse, false);
+      } catch (error) {
+        addMessage(`Error: ${error.message}`, false);
+      }
+    }
+
+    // Enable sending message with Enter key
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>

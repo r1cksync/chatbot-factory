@@ -47,7 +47,7 @@
 
       try {
         // Step 1: Signup
-        const email = `${document.getElementById('email').value.split('@')[0]}${Date.now()}@example.com`; // Unique email
+        const email = `${document.getElementById('email').value.split('@')[0]}${Date.now()}@example.com`;
         const signupResponse = await fetch(`${BASE_URL}/users/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,8 @@
         const createData = await createResponse.json();
         if (createData.status !== 'success') throw new Error('Chatbot creation failed');
         const chatbotId = createData.data.chatbot._id;
-        const apiEndpoint = `${BASE_URL}${createData.data.chatbot.apiEndpoint}`;
+        const apiEndpoint = `${BASE_URL}${createData.data.chatbot.apiEndpoint}`; // Corrected concatenation
+        const response = createData.data.response;
 
         // Step 3: Upload File
         const formData = new FormData();
@@ -90,7 +91,7 @@
         if (uploadData.status !== 'success') throw new Error('Upload failed');
 
         // Display Result
-        resultDiv.textContent = `Chatbot created successfully!\nYour API Endpoint: ${apiEndpoint}\nUse this URL to chat with your bot.`;
+        resultDiv.textContent = `Chatbot created successfully!\nYour API Endpoint: ${apiEndpoint}\nResponse: ${response}`;
       } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
       }

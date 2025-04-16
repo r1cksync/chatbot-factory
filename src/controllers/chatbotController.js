@@ -1,4 +1,4 @@
-const Chatbot = require('../models/chatbot'); // Corrected from '../models/chatbotModel'
+const Chatbot = require('../models/chatbot');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const embeddingService = require('../services/embeddingService');
@@ -6,6 +6,7 @@ const pdfParse = require('pdf-parse');
 const keyGenerator = require('../utils/keyGenerator');
 const logger = require('../utils/logger');
 const openrouterService = require('../services/openrouterService');
+const cragService = require('../services/cragService');
 
 exports.createChatbot = catchAsync(async (req, res, next) => {
   const { name, prompt } = req.body;
@@ -98,8 +99,8 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Chatbot is not ready', 503));
   }
 
-  const context = await embeddingService.searchVectorStore(message, chatbot.vectorStoreId);
-  const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context}\n\nUser: ${message}`;
+  const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
+  const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
   const response = await openrouterService.generateCompletion(fullPrompt, chatbot.settings);
 
   res.status(200).json({ status: 'success', data: { response: response.text } });
