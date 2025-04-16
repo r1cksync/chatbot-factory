@@ -100,6 +100,7 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
   }
 
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
+  logger.info(`CRAG context for message "${message}": ${context || 'No context'}`);
   const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
   const response = await openrouterService.generateCompletion(fullPrompt, chatbot.settings);
 
