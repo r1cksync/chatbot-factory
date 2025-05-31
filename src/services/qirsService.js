@@ -2,6 +2,8 @@ const openrouterService = require('./openrouterService');
 const embeddingService = require('./embeddingService');
 const logger = require('../utils/logger');
 
+const DEFAULT_MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
+
 // Beta distribution for temperature (approximated)
 function sampleBeta(alpha, beta) {
   const x = Math.random();
@@ -22,7 +24,7 @@ function cosineSimilarity(vecA, vecB) {
 }
 
 // Perturb response for MCMC (simplified: rephrase via OpenRouter)
-async function perturbResponse(response, prompt, model) {
+async function perturbResponse(response, prompt, model = DEFAULT_MODEL) {
   const perturbPrompt = `Slightly rephrase this response while keeping its meaning: "${response}"`;
   const newResponse = await openrouterService.generateCompletion(perturbPrompt, {
     temperature: 0.8,
@@ -31,7 +33,7 @@ async function perturbResponse(response, prompt, model) {
   return newResponse.text;
 }
 
-async function quantumInspiredSample(prompt, settings, mode, originalMessage, model) {
+async function quantumInspiredSample(prompt, settings, mode, originalMessage, model = DEFAULT_MODEL) {
   try {
     // Precision mode: Direct completion with low temperature
     if (mode === 'precision') {

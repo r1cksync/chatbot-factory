@@ -9,6 +9,8 @@ const openrouterService = require('../services/openrouterService');
 const cragService = require('../services/cragService');
 const qirsService = require('../services/qirsService');
 
+const DEFAULT_MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
+
 exports.createChatbot = catchAsync(async (req, res, next) => {
   const { name, prompt, model, mode } = req.body;
   if (!name || !prompt) return next(new AppError('Name and prompt are required', 400));
@@ -23,7 +25,7 @@ exports.createChatbot = catchAsync(async (req, res, next) => {
     owner: req.user._id,
     name,
     prompt,
-    model: model || 'meta-llama/llama-3.1-8b-instruct:free',
+    model: model || DEFAULT_MODEL,
     vectorStoreId,
     apiKey,
     apiEndpoint,
@@ -97,6 +99,11 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
   if (chatbot.status !== 'ready') {
     return next(new AppError('Chatbot is not ready', 503));
   }
+  if (!chatbot.model) {
+    logger.warn(`Chatbot ${apiKey} missing model, setting default`);
+    chatbot.model = DEFAULT_MODEL;
+    await chatbot.save();
+  }
 
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
   logger.info(`CRAG context for message "${message}": ${context || 'No context'}`);
@@ -121,6 +128,11 @@ exports.sampleResponse = catchAsync(async (req, res, next) => {
   if (!chatbot) return next(new AppError('Invalid chatbot API key', 401));
   if (chatbot.status !== 'ready') {
     return next(new AppError('Chatbot is not ready', 503));
+  }
+  if (!chatbot.model) {
+    logger.warn(`Chatbot ${apiKey} missing model, setting default`);
+    chatbot.model = DEFAULT_MODEL;
+    await chatbot.save();
   }
 
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);

@@ -3,6 +3,8 @@ const config = require('../config/openrouter');
 const logger = require('../utils/logger');
 const AppError = require('../utils/appError');
 
+const DEFAULT_MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
+
 const client = axios.create({
   baseURL: config.baseUrl,
   headers: { 'Authorization': `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
@@ -12,7 +14,7 @@ const client = axios.create({
 exports.generateCompletion = async (prompt, settings, model) => {
   try {
     const response = await client.post('/chat/completions', {
-      model: model || null, // Let OpenRouter pick if null
+      model: model || DEFAULT_MODEL,
       messages: [{ role: 'user', content: prompt }],
       temperature: settings.temperature || 0.7,
       max_tokens: settings.maxTokens || 2048
