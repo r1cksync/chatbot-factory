@@ -9,10 +9,10 @@ const client = axios.create({
   timeout: config.timeout
 });
 
-exports.generateCompletion = async (prompt, settings) => {
+exports.generateCompletion = async (prompt, settings, model) => {
   try {
     const response = await client.post('/chat/completions', {
-      model: config.defaultModel,
+      model: model || null, // Let OpenRouter pick if null
       messages: [{ role: 'user', content: prompt }],
       temperature: settings.temperature || 0.7,
       max_tokens: settings.maxTokens || 2048
@@ -27,7 +27,7 @@ exports.generateCompletion = async (prompt, settings) => {
 exports.generateEmbedding = async (text) => {
   try {
     const response = await client.post('/embeddings', {
-      model: 'openai/text-embedding-ada-002', // Free model available via OpenRouter
+      model: 'openai/text-embedding-ada-002',
       input: text
     });
     return response.data.data[0].embedding;

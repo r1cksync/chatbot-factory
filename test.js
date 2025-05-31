@@ -1,3 +1,5 @@
+
+
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
@@ -21,7 +23,9 @@ async function testSignup() {
 async function testCreateChatbot() {
   const response = await axios.post(`${BASE_URL}/api/v1/chatbots`, {
     name: 'MyBot',
-    prompt: 'You are a helpful assistant skilled in math and science. Explain the Pythagorean theorem briefly and then tell me what 3 squared plus 4 squared equals.'
+    prompt: 'You are a helpful assistant skilled in math and science. Explain the Pythagorean theorem briefly and then tell me what 3 squared plus 4 squared equals.',
+    model: 'google/gemma-2-9b-it:free',
+    mode: 'precision'
   }, { headers: { Authorization: `Bearer ${token}` } });
   console.log('Create Chatbot:', JSON.stringify(response.data, null, 2));
   chatbotId = response.data.data.chatbot._id;
@@ -41,14 +45,11 @@ async function testUploadDocument() {
 
 async function testChat() {
   const message = 'Can you use the theorem to explain what’s in the document?';
-  // Test 1: Chat endpoint with default mode (no mode)
+  // Test 1: Chat endpoint with default mode
   const response1 = await axios.post(`${BASE_URL}/api/v1/chatbots/chat/${apiKey}`, {
     message
   });
   console.log('Chat (Default):', JSON.stringify(response1.data, null, 2));
-  const sampleEndpoint = response1.data.data.sampleEndpoint
-    ? `${BASE_URL}${response1.data.data.sampleEndpoint}`
-    : `${BASE_URL}/api/v1/chatbots/${apiKey}/sample`;
 
   // Test 2: Chat endpoint with precision mode
   const response2 = await axios.post(`${BASE_URL}/api/v1/chatbots/chat/${apiKey}`, {
@@ -63,26 +64,6 @@ async function testChat() {
     mode: 'exploration'
   });
   console.log('Chat (Exploration):', JSON.stringify(response3.data, null, 2));
-
-  // Test 4: Sample endpoint with default mode (no mode)
-  const response4 = await axios.post(sampleEndpoint, {
-    message
-  });
-  console.log('Sample (Default):', JSON.stringify(response4.data, null, 2));
-
-  // Test 5: Sample endpoint with precision mode
-  const response5 = await axios.post(sampleEndpoint, {
-    message,
-    mode: 'precision'
-  });
-  console.log('Sample (Precision):', JSON.stringify(response5.data, null, 2));
-
-  // Test 6: Sample endpoint with exploration mode
-  const response6 = await axios.post(sampleEndpoint, {
-    message,
-    mode: 'exploration'
-  });
-  console.log('Sample (Exploration):', JSON.stringify(response6.data, null, 2));
 }
 
 async function runTests() {

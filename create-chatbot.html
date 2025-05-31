@@ -4,10 +4,33 @@
   <meta charset="UTF-8">
   <title>Create Chatbot</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label { display: block; margin: 10px 0 5px; }
-    input, textarea, button { margin-bottom: 10px; width: 100%; max-width: 400px; }
-    #result { white-space: pre-wrap; word-wrap: break-word; }
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+    h1 { color: #333; }
+    label { display: block; margin: 10px 0 5px; font-weight: bold; }
+    input, textarea, select, button { 
+      margin-bottom: 15px; 
+      width: 100%; 
+      max-width: 400px; 
+      padding: 8px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+    }
+    button { 
+      background-color: #28a745; 
+      color: white; 
+      border: none; 
+      cursor: pointer; 
+    }
+    button:hover { background-color: #218838; }
+    #result { 
+      white-space: pre-wrap; 
+      word-wrap: break-word; 
+      background-color: #fff; 
+      padding: 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 4px; 
+      max-width: 600px; 
+    }
   </style>
 </head>
 <body>
@@ -28,8 +51,29 @@
     <label for="prompt">Prompt:</label>
     <textarea id="prompt" name="prompt" rows="4" required></textarea>
     
-    <label for="file">Upload Context File (TXT):</label>
-    <input type="file" id="file" name="file" accept=".txt" required>
+    <label for="model">Model:</label>
+    <select id="model" name="model">
+      <option value="meta-llama/llama-3.1-8b-instruct:free">LLaMA 3.1 8B</option>
+      <option value="google/gemma-2-9b-it:free">Gemma 2 9B</option>
+      <option value="mistralai/mistral-7b-instruct:free">Mistral 7B</option>
+      <option value="mistralai/mistral-small-3.1-24b-instruct:free">Mistral Small 3.1 24B</option>
+      <option value="deepseek/deepseek-v3-base:free">DeepSeek V3</option>
+      <option value="nvidia/llama-3.1-nemotron-nano-8b-v1:free">Nemotron Nano 8B</option>
+      <option value="shisa-ai/shisa-v2-llama3.3-70b:free">Shisa V2 70B</option>
+      <option value="moonshotai/kimi-vl-a3b-thinking:free">Kimi VL A3B</option>
+      <option value="arliai/qwq-32b-arliai-rpr-v1:free">QWQ 32B</option>
+      <option value="agentica-org/deepcoder-14b-preview:free">DeepCoder 14B</option>
+    </select>
+    
+    <label for="mode">Response Mode:</label>
+    <select id="mode" name="mode">
+      <option value="">Default</option>
+      <option value="precision">Precision</option>
+      <option value="exploration">Exploration</option>
+    </select>
+    
+    <label for="file">Upload Context File (TXT or PDF):</label>
+    <input type="file" id="file" name="file" accept=".txt,.pdf" required>
     
     <button type="submit">Create Chatbot</button>
   </form>
@@ -58,7 +102,7 @@
           })
         });
         const signupData = await signupResponse.json();
-        if (signupData.status !== 'success') throw new Error('Signup failed');
+        if (signupData.status !== 'success') throw new Error(signupData.message || 'Signup failed');
         const token = signupData.token;
 
         // Step 2: Create Chatbot
@@ -70,14 +114,16 @@
           },
           body: JSON.stringify({
             name: document.getElementById('botName').value,
-            prompt: document.getElementById('prompt').value
+            prompt: document.getElementById('prompt').value,
+            model: document.getElementById('model').value,
+            mode: document.getElementById('mode').value || undefined
           })
         });
         const createData = await createResponse.json();
-        if (createData.status !== 'success') throw new Error('Chatbot creation failed');
+        if (createData.status !== 'success') throw new Error(createData.message || 'Chatbot creation failed');
         const chatbotId = createData.data.chatbot._id;
-        const apiEndpoint = `${BASE_URL}${createData.data.chatbot.apiEndpoint}`; // Corrected concatenation
-        const response = createData.data.response;
+        const apiKey = createData.data.chatbot.apiKey;
+        const apiEndpoint = `${BASE_URL}/chatbots/chat/${apiKey}`;
 
         // Step 3: Upload File
         const formData = new FormData();
@@ -88,10 +134,15 @@
           body: formData
         });
         const uploadData = await uploadResponse.json();
-        if (uploadData.status !== 'success') throw new Error('Upload failed');
+        if (uploadData.status !== 'success') throw new Error(uploadData.message || 'Upload failed');
 
         // Display Result
-        resultDiv.textContent = `Chatbot created successfully!\nYour API Endpoint: ${apiEndpoint}\nResponse: ${response}`;
+        resultDiv.innerHTML = `
+          <strong>Chatbot created successfully!</strong><br>
+          API Key: ${apiKey}<br>
+          Chat Endpoint: <a href="${apiEndpoint}" target="_blank">${apiEndpoint}</a><br>
+          Initial Response: ${createData.data.response}
+        `;
       } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
       }

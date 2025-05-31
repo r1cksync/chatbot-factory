@@ -4,16 +4,46 @@
   <meta charset="UTF-8">
   <title>Chat with Your Bot</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label { display: block; margin: 10px 0 5px; }
-    input, button { margin-bottom: 10px; width: 100%; max-width: 400px; }
-    #chatOutput { white-space: pre-wrap; word-wrap: break-word; }
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+    h1 { color: #333; }
+    label { display: block; margin: 10px 0 5px; font-weight: bold; }
+    input, select, button { 
+      margin-bottom: 15px; 
+      width: 100%; 
+      max-width: 400px; 
+      padding: 8px; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+    }
+    button { 
+      background-color: #007bff; 
+      color: white; 
+      border: none; 
+      cursor: pointer; 
+    }
+    button:hover { background-color: #0056b3; }
+    #chatOutput { 
+      white-space: pre-wrap; 
+      word-wrap: break-word; 
+      background-color: #fff; 
+      padding: 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 4px; 
+      max-width: 600px; 
+    }
   </style>
 </head>
 <body>
   <h1>Chat with Your Bot</h1>
   <label for="apiEndpoint">Chatbot API Endpoint:</label>
-  <input type="text" id="apiEndpoint" value="https://my-chatbot-factory.onrender.com/api/v1/chatbots/chat/chbt_ce8e8905d3da437983b02a9ceb51327d" required>
+  <input type="text" id="apiEndpoint" value="https://my-chatbot-factory.onrender.com/api/v1/chatbots/chat/chbt_552f2c40deb340ef800751d13b5e580c" required>
+  
+  <label for="mode">Response Mode:</label>
+  <select id="mode">
+    <option value="">Default</option>
+    <option value="precision">Precision</option>
+    <option value="exploration">Exploration</option>
+  </select>
   
   <label for="message">Message:</label>
   <input type="text" id="message" placeholder="Type your message" required>
@@ -28,14 +58,19 @@
 
     async function sendMessage() {
       const apiEndpoint = document.getElementById('apiEndpoint').value;
+      const mode = document.getElementById('mode').value;
       const message = document.getElementById('message').value;
+
       chatOutput.textContent = 'Sending...';
 
       try {
+        const body = { message };
+        if (mode) body.mode = mode;
+
         const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
+          body: JSON.stringify(body)
         });
         const data = await response.json();
         if (data.status !== 'success') throw new Error(data.message || 'Chat failed');

@@ -22,23 +22,23 @@ function cosineSimilarity(vecA, vecB) {
 }
 
 // Perturb response for MCMC (simplified: rephrase via OpenRouter)
-async function perturbResponse(response, prompt) {
+async function perturbResponse(response, prompt, model) {
   const perturbPrompt = `Slightly rephrase this response while keeping its meaning: "${response}"`;
   const newResponse = await openrouterService.generateCompletion(perturbPrompt, {
     temperature: 0.8,
     maxTokens: 200
-  });
+  }, model);
   return newResponse.text;
 }
 
-async function quantumInspiredSample(prompt, settings, mode, originalMessage) {
+async function quantumInspiredSample(prompt, settings, mode, originalMessage, model) {
   try {
     // Precision mode: Direct completion with low temperature
     if (mode === 'precision') {
       const response = await openrouterService.generateCompletion(prompt, {
         ...settings,
         temperature: 0.7
-      });
+      }, model);
       logger.info(`QIRS precision: Generated response for prompt`);
       return { text: response.text };
     }
@@ -55,7 +55,7 @@ async function quantumInspiredSample(prompt, settings, mode, originalMessage) {
       let currentResponse = await openrouterService.generateCompletion(prompt, {
         ...settings,
         temperature: initialTemp
-      });
+      }, model);
       let currentText = currentResponse.text;
       let currentEmbedding = await embeddingService.createEmbedding(currentText);
       let currentScore = cosineSimilarity(promptEmbedding, currentEmbedding) + 0.3 * currentText.length / 1000;
@@ -64,7 +64,7 @@ async function quantumInspiredSample(prompt, settings, mode, originalMessage) {
       const maxSteps = 3;
 
       for (let i = 0; i < maxSteps; i++) {
-        const newText = await perturbResponse(currentText, prompt);
+        const newText = await perturbResponse(currentText, prompt, model);
         const newEmbedding = await embeddingService.createEmbedding(newText);
         const newScore = cosineSimilarity(promptEmbedding, newEmbedding) + 0.3 * newText.length / 1000;
 
@@ -89,7 +89,7 @@ async function quantumInspiredSample(prompt, settings, mode, originalMessage) {
     const response = await openrouterService.generateCompletion(prompt, {
       ...settings,
       temperature: 0.9
-    });
+    }, model);
     logger.info(`QIRS default: Generated balanced response for prompt`);
     return { text: response.text };
   } catch (error) {

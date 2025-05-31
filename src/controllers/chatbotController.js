@@ -10,7 +10,7 @@ const cragService = require('../services/cragService');
 const qirsService = require('../services/qirsService');
 
 exports.createChatbot = catchAsync(async (req, res, next) => {
-  const { name, prompt } = req.body;
+  const { name, prompt, model, mode } = req.body;
   if (!name || !prompt) return next(new AppError('Name and prompt are required', 400));
 
   const apiKey = await keyGenerator.generateApiKey();
@@ -23,6 +23,7 @@ exports.createChatbot = catchAsync(async (req, res, next) => {
     owner: req.user._id,
     name,
     prompt,
+    model: model || 'meta-llama/llama-3.1-8b-instruct:free',
     vectorStoreId,
     apiKey,
     apiEndpoint,
@@ -30,10 +31,7 @@ exports.createChatbot = catchAsync(async (req, res, next) => {
   });
 
   const fullPrompt = `${prompt}`;
-  const response = await openrouterService.generateCompletion(fullPrompt, {
-    temperature: 0.7,
-    maxTokens: 2048
-  });
+  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, prompt, chatbot.model);
 
   res.status(201).json({
     status: 'success',
@@ -103,7 +101,7 @@ exports.handleChatRequest = catchAsync(async (req, res, next) => {
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
   logger.info(`CRAG context for message "${message}": ${context || 'No context'}`);
   const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
-  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message);
+  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message, chatbot.model);
 
   res.status(200).json({
     status: 'success',
@@ -127,7 +125,7 @@ exports.sampleResponse = catchAsync(async (req, res, next) => {
 
   const context = await cragService.correctiveRAG(message, chatbot.vectorStoreId, embeddingService);
   const fullPrompt = `${chatbot.prompt}\n\nContext:\n${context || 'No relevant context found.'}\n\nUser: ${message}`;
-  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message);
+  const response = await qirsService.quantumInspiredSample(fullPrompt, chatbot.settings, mode, message, chatbot.model);
 
   res.status(200).json({ status: 'success', data: { response: response.text } });
 });

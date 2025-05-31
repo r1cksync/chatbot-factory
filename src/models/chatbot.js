@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const chatbotSchema = new mongoose.Schema({
   owner: {
-    type: mongoose.Schema.Types.ObjectId, // Updated to standard notation
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
@@ -16,6 +16,22 @@ const chatbotSchema = new mongoose.Schema({
     type: String,
     required: true,
     maxlength: 10000
+  },
+  model: {
+    type: String,
+    enum: [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'google/gemma-2-9b-it:free',
+      'mistralai/mistral-7b-instruct:free',
+      'mistralai/mistral-small-3.1-24b-instruct:free',
+      'deepseek/deepseek-v3-base:free',
+      'nvidia/llama-3.1-nemotron-nano-8b-v1:free',
+      'shisa-ai/shisa-v2-llama3.3-70b:free',
+      'moonshotai/kimi-vl-a3b-thinking:free',
+      'arliai/qwq-32b-arliai-rpr-v1:free',
+      'agentica-org/deepcoder-14b-preview:free'
+    ],
+    default: 'meta-llama/llama-3.1-8b-instruct:free'
   },
   documents: [{
     name: {
@@ -50,7 +66,7 @@ const chatbotSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['initializing', 'ready', 'error'], // Updated to match latest logic
+    enum: ['initializing', 'ready', 'error'],
     default: 'initializing'
   },
   settings: {
